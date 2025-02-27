@@ -3,7 +3,7 @@
     <head>
     <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Calculadora xG - xGOT: F鷗bol</title>
+        <title>Calculadora xG - xGOT: F煤tbol</title>
         <style>
         body {
           text-align: center;
@@ -68,13 +68,13 @@
       </style>
         </head>
         <body>
-        <h2>Calculadora xG - xGOT: F鷗bol</h2>
+        <h2>Calculadora xG - xGOT: F煤tbol</h2>
         
         <div class="container">
         <div class="field" id="footballField"></div>
         <div class="coordinates" id="coordinatesXG">X: -, Y: -, xG: -</div>
         <div class="goal" id="goalArea"></div>
-        <div class="coordinates" id="coordinatesXGOT">Bal髇: Y: -, Z: - | Portero: Y: -, Z: - | xGOT: -</div>
+        <div class="coordinates" id="coordinatesXGOT">Bal贸n: Y: -, Z: - | Portero: Y: -, Z: - | xGOT: -</div>
         </div>
         
         <h3>Registros:</h3>
@@ -104,14 +104,14 @@
         let xMeters = (xPixel / 5).toFixed(1);
         let yMeters = ((340 - yPixel) / 5).toFixed(1);
         
-        // Definir el centro de la porter韆
+        // Definir el centro de la porter铆a
         let xGoal = 105;
         let yCenter = 34;
         
-        // C醠culo de la distancia al centro de la porter韆
+        // C谩lculo de la distancia al centro de la porter铆a
         let distance = Math.sqrt(Math.pow((xGoal - xMeters), 2) + Math.pow((yCenter - yMeters), 2));
         
-        // Aplicar la funci髇 ajustada de xG
+        // Aplicar la funci贸n ajustada de xG
         let xG = (76462 / (1 + Math.exp(0.159 * (distance + 69.56)))).toFixed(2);
         
         document.getElementById("coordinatesXG").innerHTML = `X: ${xMeters}, Y: ${yMeters}, xG: ${xG}`;
@@ -135,15 +135,15 @@
         
         if (!ballPosition) {
           ballPosition = { y: yMeters, z: zMeters };
-          document.getElementById("coordinatesXGOT").innerHTML = `Bal髇: Y: ${ballPosition.y}, Z: ${ballPosition.z} | Portero: Y: -, Z: - | xGOT: -`;
+          document.getElementById("coordinatesXGOT").innerHTML = `Bal贸n: Y: ${ballPosition.y}, Z: ${ballPosition.z} | Portero: Y: -, Z: - | xGOT: -`;
           createMarker(yPixel, zPixel, event.target, "ball");
         } else if (!keeperPosition) {
           keeperPosition = { y: yMeters, z: zMeters };
           let distance = Math.sqrt(Math.pow(ballPosition.y - keeperPosition.y, 2) + Math.pow(ballPosition.z - keeperPosition.z, 2));
           let xGOT = (0.128 * distance).toFixed(2);
           
-          document.getElementById("coordinatesXGOT").innerHTML = `Bal髇: Y: ${ballPosition.y}, Z: ${ballPosition.z} | Portero: Y: ${keeperPosition.y}, Z: ${keeperPosition.z} | xGOT: ${xGOT}`;
-          logEvent(`xGOT registrado - Bal髇: Y: ${ballPosition.y}, Z: ${ballPosition.z} | Portero: Y: ${keeperPosition.y}, Z: ${keeperPosition.z} | xGOT: ${xGOT}`);
+          document.getElementById("coordinatesXGOT").innerHTML = `Bal贸n: Y: ${ballPosition.y}, Z: ${ballPosition.z} | Portero: Y: ${keeperPosition.y}, Z: ${keeperPosition.z} | xGOT: ${xGOT}`;
+          logEvent(`xGOT registrado - Bal贸n: Y: ${ballPosition.y}, Z: ${ballPosition.z} | Portero: Y: ${keeperPosition.y}, Z: ${keeperPosition.z} | xGOT: ${xGOT}`);
           createMarker(yPixel, zPixel, event.target, "keeper");
           ballPosition = null;
           keeperPosition = null;
@@ -159,3 +159,4 @@
       </script>
         </body>
         </html>
+        
