@@ -208,7 +208,7 @@
       const xGoal = 105;
       const yCenter = 34;
       const distance = Math.sqrt(Math.pow((xGoal - xMeters), 2) + Math.pow((yCenter - yMeters), 2));
-      const xG = (76462 / (1 + Math.exp(0.159 * (distance + 69.56)))).toFixed(2);
+      const xG = Math.min(0.99, (76462 / (1 + Math.exp(0.159 * (distance + 69.56))))).toFixed(2);
       
       document.getElementById("coordinatesXG").innerHTML = `X: ${xMeters}, Y: ${yMeters}, xG: ${xG}`;
       
