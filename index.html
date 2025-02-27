@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+  <html lang="es">
+    <head>
+    <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Calculadora xG - xGOT: Fútbol</title>
+        <style>
+        body {
+          text-align: center;
+          font-family: Arial, sans-serif;
+        }
+      .container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+      }
+      .field {
+        width: 525px;
+        height: 340px;
+        background-image: url('https://i.imgur.com/Cwnw52i.png');
+        background-size: cover;
+        background-repeat: no-repeat;
+        background-position: center;
+        cursor: crosshair;
+        border: 1px solid #000;
+        position: relative;
+      }
+      .goal {
+        width: 732px;
+        height: 244px;
+        background-color: lightgray;
+        border: 3px solid black;
+        position: relative;
+        cursor: crosshair;
+      }
+      .coordinates {
+        font-size: 18px;
+        background: rgba(255, 255, 255, 0.7);
+        padding: 5px;
+        border-radius: 5px;
+        display: block;
+        width: fit-content;
+        margin: 10px auto;
+      }
+      .log {
+        width: 60%;
+        text-align: left;
+        border: 1px solid #000;
+        padding: 10px;
+        background-color: #f9f9f9;
+          max-height: 200px;
+        overflow-y: auto;
+      }
+      .marker {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        position: absolute;
+        transform: translate(-50%, -50%);
+      }
+      .marker.ball {
+        background-color: red;
+      }
+      .marker.keeper {
+        background-color: blue;
+      }
+      </style>
+        </head>
+        <body>
+        <h2>Calculadora xG - xGOT: Fútbol</h2>
+        
+        <div class="container">
+        <div class="field" id="footballField"></div>
+        <div class="coordinates" id="coordinatesXG">X: -, Y: -, xG: -</div>
+        <div class="goal" id="goalArea"></div>
+        <div class="coordinates" id="coordinatesXGOT">Balón: Y: -, Z: - | Portero: Y: -, Z: - | xGOT: -</div>
+        </div>
+        
+        <h3>Registros:</h3>
+        <div class="log" id="logContainer"></div>
+        
+        <script>
+        let ballPosition = null;
+      let keeperPosition = null;
+      const goalWidth = 7.32;
+      const goalHeight = 2.44;
+      const scaleY = 732 / goalWidth;
+      const scaleZ = 244 / goalHeight;
+      
+      function createMarker(x, y, parent, type) {
+        const marker = document.createElement("div");
+        marker.classList.add("marker", type);
+        marker.style.left = `${x}px`;
+        marker.style.top = `${y}px`;
+        parent.appendChild(marker);
+      }
+      
+      document.getElementById("footballField").addEventListener("click", function(event) {
+        let field = event.target.getBoundingClientRect();
+        let xPixel = event.clientX - field.left;
+        let yPixel = event.clientY - field.top;
+        
+        let xMeters = (xPixel / 5).toFixed(1);
+        let yMeters = ((340 - yPixel) / 5).toFixed(1);
+        
+        // Definir el centro de la portería
+        let xGoal = 105;
+        let yCenter = 34;
+        
+        // Cálculo de la distancia al centro de la portería
+        let distance = Math.sqrt(Math.pow((xGoal - xMeters), 2) + Math.pow((yCenter - yMeters), 2));
+        
+        // Aplicar la función ajustada de xG
+        let xG = (76462 / (1 + Math.exp(0.159 * (distance + 69.56)))).toFixed(2);
+        
+        document.getElementById("coordinatesXG").innerHTML = `X: ${xMeters}, Y: ${yMeters}, xG: ${xG}`;
+        logEvent(`xG registrado - X: ${xMeters}, Y: ${yMeters}, xG: ${xG}`);
+        createMarker(xPixel, yPixel, event.target, "ball");
+      });
+      
+      
+      
+      
+      
+      
+      
+      document.getElementById("goalArea").addEventListener("click", function(event) {
+        let goal = event.target.getBoundingClientRect();
+        let yPixel = event.clientX - goal.left;
+        let zPixel = event.clientY - goal.top;
+        
+        let yMeters = Math.max(0, Math.min(goalWidth, (yPixel / scaleY).toFixed(2)));
+        let zMeters = Math.max(0, Math.min(goalHeight, ((244 - zPixel) / scaleZ).toFixed(2)));
+        
+        if (!ballPosition) {
+          ballPosition = { y: yMeters, z: zMeters };
+          document.getElementById("coordinatesXGOT").innerHTML = `Balón: Y: ${ballPosition.y}, Z: ${ballPosition.z} | Portero: Y: -, Z: - | xGOT: -`;
+          createMarker(yPixel, zPixel, event.target, "ball");
+        } else if (!keeperPosition) {
+          keeperPosition = { y: yMeters, z: zMeters };
+          let distance = Math.sqrt(Math.pow(ballPosition.y - keeperPosition.y, 2) + Math.pow(ballPosition.z - keeperPosition.z, 2));
+          let xGOT = (0.128 * distance).toFixed(2);
+          
+          document.getElementById("coordinatesXGOT").innerHTML = `Balón: Y: ${ballPosition.y}, Z: ${ballPosition.z} | Portero: Y: ${keeperPosition.y}, Z: ${keeperPosition.z} | xGOT: ${xGOT}`;
+          logEvent(`xGOT registrado - Balón: Y: ${ballPosition.y}, Z: ${ballPosition.z} | Portero: Y: ${keeperPosition.y}, Z: ${keeperPosition.z} | xGOT: ${xGOT}`);
+          createMarker(yPixel, zPixel, event.target, "keeper");
+          ballPosition = null;
+          keeperPosition = null;
+        }
+      });
+      
+      function logEvent(message) {
+        let logContainer = document.getElementById("logContainer");
+        let logEntry = document.createElement("div");
+        logEntry.textContent = message;
+        logContainer.appendChild(logEntry);
+      }
+      </script>
+        </body>
+        </html>
