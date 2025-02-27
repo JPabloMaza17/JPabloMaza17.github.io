@@ -87,18 +87,26 @@
       transform: translate(-50%, -50%);
       z-index: 1000;
     }
-    /* Marcador para el balón (rojo) en ambos contextos */
+    /* Marcador rojo para el campo (xG) */
     .marker.ball {
       width: 8px;
       height: 8px;
       background-color: red;
       border-radius: 50%;
     }
-    /* Marcador para el portero en la portería (imagen de guante) */
+    /* Marcador para el balón en la portería (xGOT) */
+    .marker.ball-image {
+      width: 24px;
+      height: 24px;
+      background-image: url('https://images.vexels.com/media/users/3/158409/isolated/preview/b0af06a4c1a8e7a31ce379250130d26c-pelota-de-futbol-pentagono-silueta.png');
+      background-size: contain;
+      background-repeat: no-repeat;
+    }
+    /* Marcador para el portero en la portería (xGOT) */
     .marker.keeper {
       width: 24px;
       height: 24px;
-      background-image: url('https://upload.wikimedia.org/wikipedia/commons/9/9c/Football_gloves_icon.svg');
+      background-image: url('https://cdn-icons-png.flaticon.com/512/451/451730.png');
       background-size: contain;
       background-repeat: no-repeat;
     }
@@ -134,7 +142,7 @@
       parent.appendChild(marker);
     }
     
-    // Evento para el campo (xG) – usa el marcador rojo normal
+    // Evento para xG en el campo: mantiene marcador rojo (punto)
     document.getElementById("footballField").addEventListener("click", function(event) {
       const field = event.currentTarget.getBoundingClientRect();
       const xPixel = event.clientX - field.left;
@@ -143,10 +151,9 @@
       const xMeters = (xPixel / 5).toFixed(1);
       const yMeters = ((340 - yPixel) / 5).toFixed(1);
       
-      // Centro de la portería para cálculo de xG
+      // Cálculo xG (usando el centro de la portería como referencia)
       const xGoal = 105;
       const yCenter = 34;
-      
       const distance = Math.sqrt(Math.pow((xGoal - xMeters), 2) + Math.pow((yCenter - yMeters), 2));
       const xG = (76462 / (1 + Math.exp(0.159 * (distance + 69.56)))).toFixed(2);
       
@@ -156,7 +163,7 @@
       createMarker(xPixel, yPixel, event.currentTarget, "ball");
     });
     
-    // Evento para la portería (xGOT)
+    // Evento para xGOT en la portería
     document.getElementById("goalArea").addEventListener("click", function(event) {
       const goal = event.currentTarget.getBoundingClientRect();
       const yPixel = event.clientX - goal.left;
@@ -169,8 +176,8 @@
         ballPosition = { y: yMeters, z: zMeters };
         document.getElementById("coordinatesXGOT").innerHTML = 
           `Balón: Y: ${ballPosition.y}, Z: ${ballPosition.z} | Portero: Y: -, Z: - | xGOT: -`;
-        // Primer marcador en portería: marcador del balón (rojo normal)
-        createMarker(yPixel, zPixel, event.currentTarget, "ball");
+        // Primer clic en la portería: marcador del balón usando la imagen del balón
+        createMarker(yPixel, zPixel, event.currentTarget, "ball-image");
       } else if (!keeperPosition) {
         keeperPosition = { y: yMeters, z: zMeters };
         const distance = Math.sqrt(
@@ -181,7 +188,7 @@
         document.getElementById("coordinatesXGOT").innerHTML = 
           `Balón: Y: ${ballPosition.y}, Z: ${ballPosition.z} | Portero: Y: ${keeperPosition.y}, Z: ${keeperPosition.z} | xGOT: ${xGOT}`;
         logEvent(`xGOT registrado - Balón: Y: ${ballPosition.y}, Z: ${ballPosition.z} | Portero: Y: ${keeperPosition.y}, Z: ${keeperPosition.z} | xGOT: ${xGOT}`);
-        // Segundo marcador en portería: marcador del portero con imagen de guante
+        // Segundo clic en la portería: marcador del portero usando la imagen del guante
         createMarker(yPixel, zPixel, event.currentTarget, "keeper");
         ballPosition = null;
         keeperPosition = null;
