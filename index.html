@@ -27,12 +27,12 @@
       border: 1px solid #000;
       position: relative;
     }
-    /* Portería realzada */
+    /* Portería completa */
     .goal {
       width: 732px;
       height: 244px;
       position: relative;
-      cursor: crosshair;
+      cursor: pointer;
       border: 3px solid black;
       background-color: #fff;
       background-image: 
@@ -40,28 +40,42 @@
         repeating-linear-gradient(90deg, transparent, transparent 15px, rgba(0,0,0,0.1) 15px, rgba(0,0,0,0.1) 16px);
       background-size: 100% 16px, 16px 100%;
     }
-    .goal .post {
+    /* Área net: ahora cubre toda la anchura */
+    .net {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+    }
+    /* Postes: se posicionan en los extremos y se superponen ligeramente al travesaño */
+    .post {
       position: absolute;
       background-color: black;
       width: 10px;
+      pointer-events: auto;
+      z-index: 1010;
+      border-radius: 2px;
     }
-    .goal .post.left {
+    .post.left {
       left: 0;
-      top: 0;
-      height: 100%;
+      top: -2px; 
+      height: calc(100% + 2px);
     }
-    .goal .post.right {
+    .post.right {
       right: 0;
-      top: 0;
-      height: 100%;
+      top: -2px;
+      height: calc(100% + 2px);
     }
-    .goal .crossbar {
+    .crossbar {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 10px;
       background-color: black;
+      z-index: 1005;
+      pointer-events: none;
     }
     .coordinates {
       font-size: 18px;
@@ -88,13 +102,13 @@
       font-size: 16px;
       cursor: pointer;
     }
-    /* Estilos base para los marcadores */
+    /* Marcadores base */
     .marker {
       position: absolute;
       transform: translate(-50%, -50%);
       z-index: 1000;
     }
-    /* Marcador para xG en el campo: punto rojo */
+    /* Marcador en el campo (xG): punto rojo */
     .marker.ball {
       width: 8px;
       height: 8px;
@@ -126,12 +140,16 @@
   <div class="container">
     <div class="field" id="footballField"></div>
     <div class="coordinates" id="coordinatesXG">X: -, Y: -, xG: -</div>
+    <!-- Portería completa: incluye postes, travesaño y el área net (clickable) -->
     <div class="goal" id="goalArea">
       <div class="post left"></div>
       <div class="post right"></div>
       <div class="crossbar"></div>
+      <div class="net" id="netArea"></div>
     </div>
-    <div class="coordinates" id="coordinatesXGOT">Balón: Y: -, Z: - | Portero: Y: -, Z: - | xGOT: -</div>
+    <div class="coordinates" id="coordinatesXGOT">
+      Balón: Y: -, Z: - | Portero: Y: -, Z: - | xGOT: -
+    </div>
   </div>
   <h3>Registros:</h3>
   <table id="logTable">
@@ -145,8 +163,7 @@
         <th>xGOT</th>
       </tr>
     </thead>
-    <tbody id="logTableBody">
-    </tbody>
+    <tbody id="logTableBody"></tbody>
   </table>
   <!-- Botones para descargar los registros -->
   <div>
@@ -158,10 +175,10 @@
     let eventCounter = 1;
     let ballPosition = null;
     let keeperPosition = null;
-    const goalWidth = 7.32;
-    const goalHeight = 2.44;
-    const scaleY = 732 / goalWidth;
-    const scaleZ = 244 / goalHeight;
+    // Para el área net, usamos la totalidad de la portería
+    // Nota: ahora scaleY y scaleZ se calculan con base en 732px y 244px respectivamente
+    const scaleY = 732 / 7.32; // 100 px/m
+    const scaleZ = 244 / 2.44; // 100 px/m
     
     // Función para agregar una fila a la tabla de registros
     function logEventRow(eventType, coordX, coordY, xGValue, xGOTValue) {
@@ -195,27 +212,28 @@
       
       document.getElementById("coordinatesXG").innerHTML = `X: ${xMeters}, Y: ${yMeters}, xG: ${xG}`;
       
-      // Registrar evento: Tipo "xG", xGOT queda como "N/A"
+      // Registrar evento: Tipo "xG" (xGOT = N/A)
       logEventRow("xG", xMeters, yMeters, xG, "N/A");
       
       createMarker(xPixel, yPixel, event.currentTarget, "ball");
     });
     
-    // Evento para la portería (xGOT)
-    document.getElementById("goalArea").addEventListener("click", function(event) {
-      const goal = event.currentTarget.getBoundingClientRect();
-      const yPixel = event.clientX - goal.left;
-      const zPixel = event.clientY - goal.top;
+    // Evento para el área net de la portería (xGOT)
+    document.getElementById("netArea").addEventListener("click", function(event) {
+      const net = event.currentTarget.getBoundingClientRect();
+      const netXPixel = event.clientX - net.left;
+      const netZPixel = event.clientY - net.top;
       
-      const yMeters = Math.max(0, Math.min(goalWidth, (yPixel / scaleY).toFixed(2)));
-      const zMeters = Math.max(0, Math.min(goalHeight, ((244 - zPixel) / scaleZ).toFixed(2)));
+      // Se calcula en función del área completa de la portería
+      const yMeters = (netXPixel / scaleY).toFixed(2);
+      const zMeters = ((244 - netZPixel) / scaleZ).toFixed(2);
       
       if (!ballPosition) {
-        // Primer clic en la portería: registra la posición del balón y muestra la imagen del balón
+        // Primer clic: registra la posición del balón y muestra el marcador con imagen del balón
         ballPosition = { y: yMeters, z: zMeters };
         document.getElementById("coordinatesXGOT").innerHTML = 
           `Balón: Y: ${ballPosition.y}, Z: ${ballPosition.z} | Portero: Y: -, Z: - | xGOT: -`;
-        createMarker(yPixel, zPixel, event.currentTarget, "ball-image");
+        createMarker(netXPixel, netZPixel, event.currentTarget, "ball-image");
       } else if (!keeperPosition) {
         // Segundo clic: registra la posición del portero y calcula xGOT
         keeperPosition = { y: yMeters, z: zMeters };
@@ -227,11 +245,11 @@
         document.getElementById("coordinatesXGOT").innerHTML = 
           `Balón: Y: ${ballPosition.y}, Z: ${ballPosition.z} | Portero: Y: ${keeperPosition.y}, Z: ${keeperPosition.z} | xGOT: ${xGOT}`;
         
-        // Registrar dos filas: una para "Balón" y otra para "Portero" (xG se marca como "N/A" en ambos)
+        // Registrar dos filas: una para "Balón" y otra para "Portero" (xG = N/A en ambos)
         logEventRow("Balón", ballPosition.y, ballPosition.z, "N/A", xGOT);
         logEventRow("Portero", keeperPosition.y, keeperPosition.z, "N/A", xGOT);
         
-        createMarker(yPixel, zPixel, event.currentTarget, "keeper");
+        createMarker(netXPixel, netZPixel, event.currentTarget, "keeper");
         
         // Reiniciar para el próximo par de clics
         ballPosition = null;
@@ -239,7 +257,15 @@
       }
     });
     
-    // Función para crear los marcadores en la interfaz
+    // Evento para los postes: se registra "Poste" si se hace clic sobre ellos
+    document.querySelectorAll(".goal .post").forEach(post => {
+      post.addEventListener("click", function(event) {
+        event.stopPropagation();
+        logEventRow("Poste", "N/A", "N/A", "N/A", "N/A");
+      });
+    });
+    
+    // Función para crear marcadores en pantalla
     function createMarker(x, y, parent, type) {
       const marker = document.createElement("div");
       marker.classList.add("marker", type);
@@ -273,7 +299,6 @@
     
     // Función para descargar la tabla en formato Excel (.xlsx)
     function downloadExcel() {
-      // Utiliza SheetJS para convertir la tabla en un libro de Excel
       const table = document.getElementById("logTable");
       const workbook = XLSX.utils.table_to_book(table, { sheet: "Registros" });
       const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
