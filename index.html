@@ -81,6 +81,13 @@
       border: 1px solid #000;
       padding: 5px 10px;
     }
+    /* Botones de descarga */
+    .download-btn {
+      margin: 10px;
+      padding: 8px 16px;
+      font-size: 16px;
+      cursor: pointer;
+    }
     /* Estilos base para los marcadores */
     .marker {
       position: absolute;
@@ -111,6 +118,8 @@
       background-repeat: no-repeat;
     }
   </style>
+  <!-- Incluimos SheetJS para generar Excel -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
   <h2>Calculadora xG - xGOT: Fútbol</h2>
@@ -139,6 +148,11 @@
     <tbody id="logTableBody">
     </tbody>
   </table>
+  <!-- Botones para descargar los registros -->
+  <div>
+    <button class="download-btn" onclick="downloadCSV()">Descargar CSV</button>
+    <button class="download-btn" onclick="downloadExcel()">Descargar Excel</button>
+  </div>
   
   <script>
     let eventCounter = 1;
@@ -173,7 +187,7 @@
       const xMeters = (xPixel / 5).toFixed(1);
       const yMeters = ((340 - yPixel) / 5).toFixed(1);
       
-      // Cálculo de xG (se usa el centro de la portería como referencia)
+      // Cálculo de xG (usando el centro de la portería como referencia)
       const xGoal = 105;
       const yCenter = 34;
       const distance = Math.sqrt(Math.pow((xGoal - xMeters), 2) + Math.pow((yCenter - yMeters), 2));
@@ -197,7 +211,7 @@
       const zMeters = Math.max(0, Math.min(goalHeight, ((244 - zPixel) / scaleZ).toFixed(2)));
       
       if (!ballPosition) {
-        // Primer clic: registra la posición del balón en la portería
+        // Primer clic en la portería: registra la posición del balón y muestra la imagen del balón
         ballPosition = { y: yMeters, z: zMeters };
         document.getElementById("coordinatesXGOT").innerHTML = 
           `Balón: Y: ${ballPosition.y}, Z: ${ballPosition.z} | Portero: Y: -, Z: - | xGOT: -`;
@@ -213,7 +227,7 @@
         document.getElementById("coordinatesXGOT").innerHTML = 
           `Balón: Y: ${ballPosition.y}, Z: ${ballPosition.z} | Portero: Y: ${keeperPosition.y}, Z: ${keeperPosition.z} | xGOT: ${xGOT}`;
         
-        // Registrar dos filas: una para "Balón" y otra para "Portero"
+        // Registrar dos filas: una para "Balón" y otra para "Portero" (xG se marca como "N/A" en ambos)
         logEventRow("Balón", ballPosition.y, ballPosition.z, "N/A", xGOT);
         logEventRow("Portero", keeperPosition.y, keeperPosition.z, "N/A", xGOT);
         
@@ -232,6 +246,46 @@
       marker.style.left = `${x}px`;
       marker.style.top = `${y}px`;
       parent.appendChild(marker);
+    }
+    
+    // Función para descargar la tabla en formato CSV
+    function downloadCSV() {
+      let csv = "";
+      const rows = document.querySelectorAll("#logTable tr");
+      rows.forEach((row) => {
+        const cols = row.querySelectorAll("th, td");
+        const rowData = [];
+        cols.forEach((col) => {
+          rowData.push('"' + col.innerText.trim() + '"');
+        });
+        csv += rowData.join(",") + "\n";
+      });
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", "registros.csv");
+      link.style.visibility = "hidden";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+    
+    // Función para descargar la tabla en formato Excel (.xlsx)
+    function downloadExcel() {
+      // Utiliza SheetJS para convertir la tabla en un libro de Excel
+      const table = document.getElementById("logTable");
+      const workbook = XLSX.utils.table_to_book(table, { sheet: "Registros" });
+      const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+      const blob = new Blob([wbout], { type: "application/octet-stream" });
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", "registros.xlsx");
+      link.style.visibility = "hidden";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
   </script>
 </body>
